@@ -6,7 +6,7 @@ ajax와 css, html, javascript를 이용하였습니다.
 
 ![image](https://github.com/jdi512/BIS/assets/156891813/cafb84e9-8c41-4b10-b9b4-3686df0da25b)
 
-ajax - 공공데이터포털(http://data.go.kr)에서 버스 정류장 정보/도착 정보/기상정보/도착 예정 버스 자료를 받을 때(방식은 json)  (단, 도로명주소와 구주소는 kakaoapi를 통해 추출)
+ajax - 공공데이터포털(http://data.go.kr) 에서 버스 정류장 정보/도착 정보/기상정보/도착 예정 버스 자료를 받을 때(방식은 json)  (단, 도로명주소와 구주소는 kakaoapi를 통해 추출)
 
 
 css - 해당 글자의 폰트(neo 둥근모꼴)와 배경색, 글자 크기, 시계의 ":" blink할 때 (style)
