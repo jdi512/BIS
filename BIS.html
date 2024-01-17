@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIS</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+</head>
+<style>
+    @import url('https://cdn.jsdelivr.net/gh/neodgm/neodgm-webfont@latest/neodgm/style.css');
+
+    p,
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-family: 'NeoDunggeunmo';
+    }
+
+    .blink {
+        animation: blinker 1s linear infinite;
+    }
+
+    @keyframes blinker {
+        50% {
+            opacity: 0;
+        }
+    }
+
+    .box-container {
+        display: flex;
+        margin: 5px;
+    }
+
+    .weather-container {
+        flex: 1;
+        margin: 5px;
+    }
+
+    .time-container {
+        flex: 1;
+        margin: 5px;
+    }
+
+    .bus-container {
+        flex: 1;
+        margin: 5px;
+    }
+
+    .name-container {
+        flex: 1;
+        margin: 5px;
+    }
+
+    .row-container {
+        flex: 1;
+        margin: 5px;
+    }
+
+    .address-container {
+        flex: 1;
+        margin: 5px;
+    }
+
+    .dust-container {
+        flex: 1;
+        margin: 5px;
+    }
+
+
+
+    .weather {
+        color: yellow;
+        font-weight: bold;
+    }
+
+    .current-time {
+        color: yellow;
+        font-weight: bold;
+    }
+
+    .name {
+        color: yellow;
+        font-weight: bold;
+    }
+
+    .bus1 {
+        color: yellow;
+        font-weight: bold;
+    }
+
+    .bus2 {
+        color: yellow;
+        font-weight: bold;
+    }
+
+    .address {
+        color: yellow;
+        font-weight: bold;
+    }
+
+</style>
+
+<body style="background-color:black">
+    <div class="box-container">
+        <div class="weather-container">
+            <h2 class="weather"></h2>
+        </div>
+    </div>
+    <div class="box-container">
+        <div class="address-container">
+            <h1 class="address"></h1>
+        </div>
+    </div>
+
+    <div class="box-container">
+        <div class="name-container">
+            <h3 class="name"></h3>
+        </div>
+        <div class="time-container">
+            <h3 class="current-time"></h3>
+        </div>
+    </div>
+
+
+    <div class="box-container">
+        <div class="bus-container">
+            <p class="bus1"></p>
+        </div>
+        <div class="bus-container">
+            <h3 class="bus2"></h3>
+        </div>
+    </div>
+
+</body>
+
+<script>
+
+
+
+    $(document).ready(function () {
+        //위 경도 찾기
+        function onGeolocationSuccess(position) {
+            lati = position.coords.latitude;
+            long = position.coords.longitude;
+        }
+        function onGeolocationFail(error) {
+            alert("GPS 연결이 힘듭니다.");
+        }
+        if (navigator.geolocation) {
+            var positionOptions = {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 10000
+            };
+            navigator.geolocation.getCurrentPosition(onGeolocationSuccess, onGeolocationFail, positionOptions);
+
+        }
+
+
+        //서비스 key 입력
+        key = "ho5ZzWHhC23tx5jSARHsEQdNvJY0fvloxEjtNOA39cLoKzXVaIuEyFPIwCpGm2uN52UF8PuwJF%2BSaStXbsHTBw%3D%3D";
+
+        //위, 경도 -> 기상청 X,Y 좌표 변환
+        function dfsXyConv(code, v1, v2) {
+            const { PI, tan, log, cos, pow, floor, sin, sqrt, atan, abs, atan2 } = Math
+
+            const RE = 6371.00877
+            const GRID = 5.0
+            const SLAT1 = 30.0
+            const SLAT2 = 60.0
+            const OLON = 126.0
+            const OLAT = 38.0
+            const XO = 43
+            const YO = 136
+
+            const DEGRAD = PI / 180.0
+            const RADDEG = 180.0 / PI
+
+            const re = RE / GRID
+            const slat1 = SLAT1 * DEGRAD
+            const slat2 = SLAT2 * DEGRAD
+            const olon = OLON * DEGRAD
+            const olat = OLAT * DEGRAD
+
+            let sn = tan(PI * 0.25 + slat2 * 0.5) / tan(PI * 0.25 + slat1 * 0.5)
+            sn = log(cos(slat1) / cos(slat2)) / log(sn)
+            let sf = tan(PI * 0.25 + slat1 * 0.5)
+            sf = pow(sf, sn) * cos(slat1) / sn
+            let ro = tan(PI * 0.25 + olat * 0.5)
+            ro = re * sf / pow(ro, sn)
+            const rs = {}
+            let ra, theta
+            if (code === 'toXY') {
+                rs.lat = v1
+                rs.lon = v2
+                ra = tan(PI * 0.25 + (v1) * DEGRAD * 0.5)
+                ra = re * sf / pow(ra, sn)
+                theta = v2 * DEGRAD - olon
+                if (theta > PI) theta -= 2.0 * PI
+                if (theta < -PI) theta += 2.0 * PI
+                theta *= sn
+                rs.x = floor(ra * sin(theta) + XO + 0.5)
+                rs.y = floor(ro - ra * cos(theta) + YO + 0.5)
+            } else {
+                rs.x = v1
+                rs.y = v2
+                const xn = v1 - XO
+                const yn = ro - v2 + YO
+                ra = sqrt(xn * xn + yn * yn)
+                if (sn < 0.0) ra = -ra
+                let alat = pow((re * sf / ra), (1.0 / sn))
+                alat = 2.0 * atan(alat) - PI * 0.5
+
+                if (abs(xn) <= 0.0) {
+                    theta = 0.0
+                } else {
+                    if (abs(yn) <= 0.0) {
+                        theta = PI * 0.5
+                        if (xn < 0.0) theta = -theta
+                    } else theta = atan2(xn, yn)
+                }
+                const alon = theta / sn + olon
+                rs.lat = alat * RADDEG
+                rs.lon = alon * RADDEG
+            }
+            return rs
+        }
+
+
+        //시간 출력
+        setInterval(function () {
+            let now = new Date();
+            let year = now.getFullYear();
+            let month = now.getMonth() + 1;
+            let date = now.getDate();
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            let weekday = ['일', '월', '화', '수', '목', '금', '토'];
+            let week = weekday[now.getDay()];
+            let hourzero = '';
+            let minutezero = '';
+
+            if (hour < 10) {
+                hourzero += '0'
+            }
+            if (minute < 10) {
+                minutezero += '0'
+            }
+
+
+            let time = '  ' + "<h1><b style='color:orange';>" + year + '년' + month + '월' + date + '일<small>(' + week + ')</small></b></h1><h2><br><big><b>' + hourzero + hour + '<b class="blink">:</b>' + minutezero + minute + '</big></h2></b>';
+            document.querySelector('.current-time').innerHTML = time;
+
+        }, 1000);
+
+        setInterval(function () {
+            //날씨출력을 위한 코드
+
+            let now = new Date();
+            let year = now.getFullYear();
+            let month = now.getMonth() + 1;
+            let date = now.getDate();
+            let hour = now.getHours();
+            let minute = now.getMinutes();
+            let monthzero = '';
+            let datezero = '';
+            let hourzero = '';
+            let minutezero = '';
+            if (month < 10) {
+                monthzero += '0'
+            }
+            if (date < 10) {
+                datezero += '0'
+            }
+
+            if (minute < 10) {
+                minutezero += '0'
+            }
+
+            if (minute < 30) {
+                hour = hour - 1;
+                if (hour < 0) {
+                    now.setDate(now.getDate() - 1);
+                    date = now.getDate();
+                    month = now.getMonth() + 1;
+                    year = now.getFullYear();
+                    hour = 23;
+                }
+            }
+
+            if (hour < 10) {
+                hourzero += '0';
+            }
+
+            let today = year + "" + monthzero + month + "" + datezero + date;
+
+
+            //주소 출력
+            $.ajax({
+                type: "get",
+                url: "https://dapi.kakao.com/v2/local/geo/coord2address.json",
+                data: {
+                    x: long,
+                    y: lati
+                },
+                headers: { Authorization: "KakaoAK f2db25ca8a7febb6b146bc0ed55a50fd" },
+                success: function (data) {
+                    //지번 주소
+                    let address = '<b style="color:orange;">현재 위치:</b>' + data.documents[0].address.address_name;
+                    //구역 정의
+                    let district = data.documents[0].address.region_1depth_name;
+                    //도로명 주소
+                    if (data.documents[0].road_address != null) {
+                        address += '<small> (<b style="color:orange;">도로명 주소:</b>' + data.documents[0].road_address.address_name + '</small>)';
+                    } else {
+                        address += '<small> (<b style="color:orange;">도로명 주소:</b><b style="color:red;">존재 하지 않음.</small></b>)';
+                    }
+                    $(".address").empty();
+
+                    $(".address").append(address);
+
+                }
+
+            });
+
+
+            //근처 정류장 찾기
+            $.ajax({
+                type: 'get',
+                url: "https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=" + key + "&gpsLati=" + lati + "&gpsLong=" + long,
+                data: {
+                    numOfRows: 30,
+                    pageNo: 1,
+                    _type: "json"
+                },
+                success: function (data) {
+                    let city = '';
+                    let code = '';
+                    if (data.response.body.totalCount == 1) {
+                        city += data.response.body.items.item.citycode;
+                        code += data.response.body.items.item.nodeno;
+                        //버스 정류장 검색 불가시 
+                    } else if (data.response.body.totalCount == 0) {
+
+                        let warn = '<h1 style="color:red">정류장 없음, 다른 곳을 찾으세요</h1>';
+                        document.querySelector('.bus1').innerHTML = warn;
+                        document.querySelector('.bus2').innerHTML = warn;
+                        document.querySelector('.name').innerHTML = warn;
+                        //인근 날씨 출력
+                        let rs = dfsXyConv("toXY", lati, long);
+                        let nx = rs.x;
+                        let ny = rs.y;
+                        $.ajax({
+                            type: 'get',
+                            url: "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?ServiceKey=" + key + "&base_date=" + today + "&base_time=" + hourzero + hour + "00&nx=" + nx + "&ny=" + ny,
+                            data: {
+                                numOfRows: 8,
+                                pageNo: 1,
+                                dataType: "json"
+                            },
+                            success: function (data) {
+                                let info1 = "";
+                                let specialinfo = "";
+                                let temperatureinfo = "";
+                                for (let i = 0; i < data.response.body.totalCount; i++) {
+                                    if (i == 1) {
+                                        text = '<b style="color:orange";> 습도: </b>'
+                                        sign = '%'
+                                        info1 += text + data.response.body.items.item[i].obsrValue + sign + ' ';
+                                    } else if (i == 2) {
+                                        text = '<b style="color:orange"";> 강수량: </b>'
+                                        sign = 'mm'
+                                        info1 += text + data.response.body.items.item[2].obsrValue + sign + ' ';
+
+                                    } else if (i == 3) {
+                                        text = '<b style="color:orange"";> 기온: </b>'
+                                        sign = '°C'
+                                        info1 += text + data.response.body.items.item[i].obsrValue + sign + ' ';
+                                    } else if (i == 5) {
+                                        text = '<b style="color:orange"";> 풍향: </b>'
+                                        direction = ''
+                                        if (data.response.body.items.item[i].obsrValue >= 0 && data.response.body.items.item[i].obsrValue < 22.5) {
+                                            direction += '북'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 22.5 && data.response.body.items.item[i].obsrValue < 45) {
+                                            direction += '북북동'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 45 && data.response.body.items.item[i].obsrValue < 67.5) {
+                                            direction += '북동'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 67.5 && data.response.body.items.item[i].obsrValue < 90) {
+                                            direction += '동북동'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 90 && data.response.body.items.item[i].obsrValue < 112.5) {
+                                            direction += '동'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 112.5 && data.response.body.items.item[i].obsrValue < 135) {
+                                            direction += '동남동'
+
+                                        } else if (data.response.body.items.item[i].obsrValue >= 135 && data.response.body.items.item[i].obsrValue < 157.5) {
+                                            direction += '남동'
+
+                                        } else if (data.response.body.items.item[i].obsrValue >= 157.5 && data.response.body.items.item[i].obsrValue < 180) {
+                                            direction += '남남동'
+
+                                        } else if (data.response.body.items.item[i].obsrValue >= 180 && data.response.body.items.item[i].obsrValue < 202.5) {
+                                            direction += '남'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 202.5 && data.response.body.items.item[i].obsrValue < 225) {
+                                            direction += '남남서'
+                                        }
+                                        else if (data.response.body.items.item[i].obsrValue >= 225 && data.response.body.items.item[i].obsrValue < 247.5) {
+                                            direction += '남서'
+                                        }
+                                        else if (data.response.body.items.item[i].obsrValue >= 247.5 && data.response.body.items.item[i].obsrValue < 270) {
+                                            direction += '서남서'
+                                        }
+                                        else if (data.response.body.items.item[i].obsrValue >= 270 && data.response.body.items.item[i].obsrValue < 292.5) {
+                                            direction += '서'
+                                        }
+                                        else if (data.response.body.items.item[i].obsrValue >= 292.5 && data.response.body.items.item[i].obsrValue < 315) {
+                                            direction += '서북서'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 315 && data.response.body.items.item[i].obsrValue < 337.5) {
+                                            direction += '북서'
+                                        } else if (data.response.body.items.item[i].obsrValue >= 337.5 && data.response.body.items.item[i].obsrValue < 360) {
+                                            direction += '북북서'
+                                        }
+                                        info1 += text + direction + ' ';
+                                    } else if (i == 7) {
+                                        text = '<b style="color:orange"";> 풍속: </b>'
+                                        sign = 'm/s'
+                                        info1 += text + data.response.body.items.item[i].obsrValue + sign + '';
+                                    }
+                                }
+
+                                $(".weather").empty();
+
+                                $(".weather").append(info1);
+
+                            }
+                        });
+
+
+
+                    } else {
+                        city += data.response.body.items.item[0].citycode;
+                        code += data.response.body.items.item[0].nodeno;
+                    }
+                    //정류장 이름 출력
+                    $.ajax({
+                        type: 'get',
+                        url: "https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=" + key + "&cityCode=" + city + "&nodeNo=" + code,
+                        data: {
+                            numOfRows: 30,
+                            pageNo: 1,
+                            _type: "json"
+                        },
+                        success: function (data) {
+                            let name = '';
+
+                            name += "NAME: <h2 style='color:orange';>" + data.response.body.items.item.nodenm + '</h2> ID: <h2 style="color:orange";>' + code + '</h2><br>';
+                            let id = data.response.body.items.item.nodeid;
+                            let x = data.response.body.items.item.gpslati;
+                            let y = data.response.body.items.item.gpslong;
+
+                            let rs = dfsXyConv("toXY", x, y);
+
+                            let nx = rs.x;
+                            let ny = rs.y;
+                            //해당 정류장 인근 날씨 출력
+                            $.ajax({
+                                type: 'get',
+                                url: "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?ServiceKey=" + key + "&base_date=" + today + "&base_time=" + hourzero + hour + "00&nx=" + nx + "&ny=" + ny,
+                                data: {
+                                    numOfRows: 8,
+                                    pageNo: 1,
+                                    dataType: "json"
+                                },
+                                success: function (data) {
+
+                                    let info1 = "";
+                                    let specialinfo = "";
+                                    let temperatureinfo = "";
+                                    for (let i = 0; i < data.response.body.totalCount; i++) {
+                                        if (i == 1) {
+                                            text = '<b style="color:orange";> 습도: </b>'
+                                            sign = '%'
+                                            info1 += text + data.response.body.items.item[i].obsrValue + sign + ' ';
+                                        } else if (i == 2) {
+                                            text = '<b style="color:orange"";> 강수량: </b>'
+                                            sign = 'mm'
+                                            info1 += text + data.response.body.items.item[2].obsrValue + sign + ' ';
+
+                                        } else if (i == 3) {
+                                            text = '<b style="color:orange"";> 기온: </b>'
+                                            sign = '°C'
+                                            info1 += text + data.response.body.items.item[i].obsrValue + sign + ' ';
+                                        } else if (i == 5) {
+                                            text = '<b style="color:orange"";> 풍향: </b>'
+                                            direction = ''
+                                            if (data.response.body.items.item[i].obsrValue >= 0 && data.response.body.items.item[i].obsrValue < 22.5) {
+                                                direction += '북'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 22.5 && data.response.body.items.item[i].obsrValue < 45) {
+                                                direction += '북북동'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 45 && data.response.body.items.item[i].obsrValue < 67.5) {
+                                                direction += '북동'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 67.5 && data.response.body.items.item[i].obsrValue < 90) {
+                                                direction += '동북동'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 90 && data.response.body.items.item[i].obsrValue < 112.5) {
+                                                direction += '동'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 112.5 && data.response.body.items.item[i].obsrValue < 135) {
+                                                direction += '동남동'
+
+                                            } else if (data.response.body.items.item[i].obsrValue >= 135 && data.response.body.items.item[i].obsrValue < 157.5) {
+                                                direction += '남동'
+
+                                            } else if (data.response.body.items.item[i].obsrValue >= 157.5 && data.response.body.items.item[i].obsrValue < 180) {
+                                                direction += '남남동'
+
+                                            } else if (data.response.body.items.item[i].obsrValue >= 180 && data.response.body.items.item[i].obsrValue < 202.5) {
+                                                direction += '남'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 202.5 && data.response.body.items.item[i].obsrValue < 225) {
+                                                direction += '남남서'
+                                            }
+                                            else if (data.response.body.items.item[i].obsrValue >= 225 && data.response.body.items.item[i].obsrValue < 247.5) {
+                                                direction += '남서'
+                                            }
+                                            else if (data.response.body.items.item[i].obsrValue >= 247.5 && data.response.body.items.item[i].obsrValue < 270) {
+                                                direction += '서남서'
+                                            }
+                                            else if (data.response.body.items.item[i].obsrValue >= 270 && data.response.body.items.item[i].obsrValue < 292.5) {
+                                                direction += '서'
+                                            }
+                                            else if (data.response.body.items.item[i].obsrValue >= 292.5 && data.response.body.items.item[i].obsrValue < 315) {
+                                                direction += '서북서'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 315 && data.response.body.items.item[i].obsrValue < 337.5) {
+                                                direction += '북서'
+                                            } else if (data.response.body.items.item[i].obsrValue >= 337.5 && data.response.body.items.item[i].obsrValue < 360) {
+                                                direction += '북북서'
+                                            }
+                                            info1 += text + direction + ' ';
+                                        } else if (i == 7) {
+                                            text = '<b style="color:orange"";> 풍속: </b>'
+                                            sign = 'm/s'
+                                            info1 += text + data.response.body.items.item[i].obsrValue + sign + ' ';
+                                        }
+                                    }
+
+                                    $(".weather").empty();
+
+                                    $(".weather").append(info1);
+
+                                }
+
+
+                            });
+
+
+                            //해당 정류장 도착 버스 조회
+                            $.ajax({
+                                type: 'get',
+                                url: "https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=" + key + "&nodeId=" + id + "&cityCode=" + city,
+
+                                data: {
+                                    numOfRows: 30,
+                                    pageNo: 1,
+                                    _type: "json"
+                                },
+                                success: function (data) {
+                                    let info2 = "<h2 style='color:orange;'>버스 </h2><br>";
+                                    let arrive = "<h2 style='color:orange;'>도착 예정 </h2><br>";
+
+                                    if (data.response.body.totalCount == 1) {
+                                        let min = Math.floor(data.response.body.items.item.arrtime / 60);
+                                        info2 += '<div class="box-container">';
+                                        info2 += '<div class="row-container">';
+                                        if (min <= 5) {
+                                            info2 += "<b style='color:orange;'>" + data.response.body.items.item.routeno + '</b>(남은 시간:<b style="color:orange";>' + min + '</b>분)</b><br>';
+
+                                            arrive += '<h3 style="color:orange;">' + data.response.body.items.item.routeno + '</h3> ';
+
+                                        } else {
+                                            info2 += '<b>' + data.response.body.items.item.routeno + '</b>(남은 시간:<b style="color:orange";>' + min + '</b>분)</b><br>';
+
+                                            arrive += ' ';
+
+                                        }
+                                        info2 += '</div>';
+                                        info2 += '</div>';
+                                    } else if (data.response.body.totalCount == 0) {
+                                        info2 += '<div class="box-container">';
+                                        info2 += '<div class="row-container">';
+                                        info2 += '<h1 style="color:red;">없음</h1>';
+                                        arrive += '';
+                                        info2 += '</div>';
+                                        info2 += '</div>';
+                                    } else {
+                                        var totalnum = data.response.body.totalCount;
+                                        const colnum = 8;
+                                        if (totalnum % colnum == 0) {
+                                            rownum = parseInt(totalnum / colnum);
+                                        } else {
+                                            rownum = parseInt(totalnum / colnum) + 1;
+                                        }
+                                        info2 += '<div class="box-container">';
+                                        for (let i = 0; i < rownum; i++) {
+                                            info2 += '<div class="row-container">';
+                                            for (let j = 0; j < colnum; j++) {
+                                                num = i * colnum + j;
+                                                if (num > totalnum - 1) {
+                                                    break;
+                                                }
+
+                                                let min = Math.floor(data.response.body.items.item[num].arrtime / 60);
+
+
+                                                if (min <= 5) {
+                                                    info2 += "<b style='color:orange;'>" + data.response.body.items.item[num].routeno + '</b>(남은 시간:<b style="color:orange";>' + min + '</b>분)</b><br>';
+
+                                                    arrive += '<b style="color:orange;">' + data.response.body.items.item[num].routeno + '</h3>  ';
+
+                                                } else {
+                                                    info2 += '<b>' + data.response.body.items.item[num].routeno + '</b>(남은 시간:<b style="color:green";></b><b style="color:orange";>' + min + '</b>분)</b><br>';
+
+                                                    arrive += '';
+                                                }
+
+                                            }
+                                            info2 += '</div>';
+                                        }
+                                        info2 += '</div>';
+                                    }
+
+
+                                    $(".name").empty();
+                                    $(".bus1").empty();
+                                    $(".bus2").empty();
+
+                                    $(".name").append(name);
+                                    $(".bus1").append(info2);
+                                    $(".bus2").append(arrive);
+
+                                }
+
+                            });
+
+                        }
+                    });
+                }
+            });
+        }, 1000);
+    });
+</script>
+
+
+
+
+
+</html>
