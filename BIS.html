@@ -232,71 +232,48 @@
 
 
         //시간 출력
-        setInterval(function () {
-            let now = new Date();
-            let year = now.getFullYear();
-            let month = now.getMonth() + 1;
-            let date = now.getDate();
-            let hour = now.getHours();
-            let minute = now.getMinutes();
-            let weekday = ['일', '월', '화', '수', '목', '금', '토'];
-            let week = weekday[now.getDay()];
-            let hourzero = '';
-            let minutezero = '';
+        function printTime() {
+		let now = new Date();
+		let [year, month, date, hour, minute] = [now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes()];
+		let weekday = ['일', '월', '화', '수', '목', '금', '토'];
+		let week = weekday[now.getDay()];
+		let [hourzero, minutezero] = [hour < 10 ? '0' : '', minute < 10 ? '0' : ''];
 
-            if (hour < 10) {
-                hourzero += '0'
-            }
-            if (minute < 10) {
-                minutezero += '0'
-            }
+		let time = `<h1><b style='color:orange';>${year}년${month}월${date}일<small>(${week})</small></b></h1><h2><br><big><b>${hourzero}${hour}<b class="blink">:</b>${minutezero}${minute}</big></h2></b>`;
+		document.querySelector('.current-time').innerHTML = time;
 
+        };
 
-            let time = '  ' + "<h1><b style='color:orange';>" + year + '년' + month + '월' + date + '일<small>(' + week + ')</small></b></h1><h2><br><big><b>' + hourzero + hour + '<b class="blink">:</b>' + minutezero + minute + '</big></h2></b>';
-            document.querySelector('.current-time').innerHTML = time;
-
-        }, 1000);
-
-        setInterval(function () {
+        function printWeatherAndSearchStation() {
             //날씨출력을 위한 코드
 
-            let now = new Date();
-            let year = now.getFullYear();
-            let month = now.getMonth() + 1;
-            let date = now.getDate();
-            let hour = now.getHours();
-            let minute = now.getMinutes();
-            let monthzero = '';
-            let datezero = '';
-            let hourzero = '';
-            let minutezero = '';
-            if (month < 10) {
-                monthzero += '0'
-            }
-            if (date < 10) {
-                datezero += '0'
-            }
+			let now = new Date();
+			let year = now.getFullYear();
+			let month = now.getMonth() + 1;
+			let date = now.getDate();
+			let hour = now.getHours();
+			let minute = now.getMinutes();
 
-            if (minute < 10) {
-                minutezero += '0'
-            }
+			function addZeroIfNeeded(value) {
+				return value < 10 ? '0' : '';
+			}
 
-            if (minute < 30) {
-                hour = hour - 1;
-                if (hour < 0) {
-                    now.setDate(now.getDate() - 1);
-                    date = now.getDate();
-                    month = now.getMonth() + 1;
-                    year = now.getFullYear();
-                    hour = 23;
-                }
-            }
+			let monthzero = addZeroIfNeeded(month);
+			let datezero = addZeroIfNeeded(date);
+			let hourzero = addZeroIfNeeded(hour);
 
-            if (hour < 10) {
-                hourzero += '0';
-            }
+			if (minute < 30) {
+				hour = hour - 1;
+				if (hour < 0) {
+					now.setDate(now.getDate() - 1);
+					date = now.getDate();
+					month = now.getMonth() + 1;
+					year = now.getFullYear();
+					hour = 23;
+				}
+			}
 
-            let today = year + "" + monthzero + month + "" + datezero + date;
+			let today = `${year}${monthzero}${month}${datezero}${date}`;
 
 
             //주소 출력
@@ -646,12 +623,10 @@
                     });
                 }
             });
-        }, 1000);
+		}
+    //인터벌 설정
+	setInterval(printTime, 1000);
+	setInterval(printWeatherAndSearchStation, 1000);
     });
 </script>
-
-
-
-
-
 </html>
