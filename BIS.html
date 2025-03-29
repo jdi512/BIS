@@ -418,8 +418,8 @@
 
 
                     } else {
-                        city += data.response.body.items.item[1].citycode;
-                        code += data.response.body.items.item[1].nodeno;
+                        city += data.response.body.items.item[0].citycode;
+                        code += data.response.body.items.item[0].nodeno;
                     }
                     //정류장 이름 출력
                     $.ajax({
